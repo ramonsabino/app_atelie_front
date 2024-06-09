@@ -28,27 +28,9 @@ const Historico: React.FC = () => {
     // Adicione mais meses conforme necessário
   ];
 
-  const handleVerHistorico = (clientes: Cliente[], rowIndex: number) => {
+  const handleVerHistorico = (clientes: Cliente[]) => {
     setClientesDoMes(clientes);
-    const key = `${rowIndex}`;
-    setExpandedRowKeys((prevKeys) => (prevKeys.includes(key) ? prevKeys.filter((k) => k !== key) : [...prevKeys, key]));
     setModalVisible(true); // Abrir o modal ao clicar em "Ver Histórico"
-  };
-
-  const expandableRowRender = (record: Mes, rowIndex: number) => ({
-    expandedRowKeys,
-    onExpand: (_expanded: boolean, _record: Mes, _event: React.MouseEvent<HTMLElement>) => handleExpandRow(rowIndex),
-    expandRowByClick: true,
-    expandIconColumnIndex: -1,
-  });
-
-  const handleExpandRow = (rowIndex: number) => {
-    const key = `${rowIndex}`;
-    setExpandedRowKeys((prevKeys) => (prevKeys.includes(key) ? prevKeys.filter((k) => k !== key) : [...prevKeys, key]));
-  };
-
-  const expandable: any = {
-    expandable: expandableRowRender,
   };
 
   const columns = [
@@ -59,8 +41,8 @@ const Historico: React.FC = () => {
       title: 'Ações',
       dataIndex: 'actions',
       key: 'actions',
-      render: (_text: any, record: Mes, rowIndex: number) => (
-        <Button type="primary" onClick={() => handleVerHistorico(record.clientesAtendidos, rowIndex)}>Ver Histórico</Button>
+      render: (_text: any, record: Mes) => (
+        <Button type="primary" onClick={() => handleVerHistorico(record.clientesAtendidos)}>Ver Histórico</Button>
       ),
     },
   ];
@@ -72,7 +54,6 @@ const Historico: React.FC = () => {
         columns={columns}
         pagination={false}
         scroll={{ x: true }}
-        {...expandable}
       />
       <Modal
         title="Clientes Atendidos no Mês"
@@ -80,7 +61,7 @@ const Historico: React.FC = () => {
         onCancel={() => setModalVisible(false)} // Fechar o modal ao clicar em "Cancelar"
         footer={null}
       >
-        <Collapse accordion activeKey={expandedRowKeys}>
+        <Collapse accordion>
           {clientesDoMes.map((cliente, index) => (
             <Panel header={cliente.nome} key={index}>
               <p><strong>Procedimento:</strong> {cliente.procedimento}</p>
@@ -90,7 +71,7 @@ const Historico: React.FC = () => {
         </Collapse>
       </Modal>
     </div>
- );
+  );
 };
 
 export default Historico;

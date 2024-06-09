@@ -53,7 +53,7 @@ const Rendimentos = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, textAlign: 'right' }}>
         <Button type="primary" onClick={handleAddEntrada}>Adicionar Entrada de Valor</Button>
       </div>
       {/* Exemplo de cartões com os valores */}
