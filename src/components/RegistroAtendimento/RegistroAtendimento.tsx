@@ -1,11 +1,36 @@
 import React from 'react';
 import { Form, Input, DatePicker, TimePicker, Select, Button } from 'antd';
+import { useAtendimentoContext } from '../../context/AtendimentoContext';
+import moment, { Moment } from 'moment';
+import 'moment/locale/pt-br';
 
 const { Option } = Select;
 
 const RegistroAtendimento: React.FC = () => {
-  const onFinish = (values: any) => {
-    console.log('Received values of form: ', values);
+  const { criarNovoAtendimento } = useAtendimentoContext();
+
+  const onFinish = async (values: any) => {
+    try {
+      const { nome, procedimento, data, hora, forma_pagamento, pagamento } = values;
+
+      // Formatar data e hora para enviar ao backend
+      const dataHoraAgendada: string = moment.utc(`${moment(data).format('YYYY-MM-DD')} ${moment(hora).format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
+      const dataHoraRegistro: string = moment().format('YYYY-MM-DD HH:mm:ss');
+
+      // Criar novo atendimento
+      await criarNovoAtendimento({
+        nomeCliente: nome,
+        procedimento,
+        dataHoraAgendada,
+        dataHoraRegistro,
+        formaPagamento: forma_pagamento,
+        pagamento: parseFloat(pagamento) // Converte para número
+      });
+
+      console.log('Atendimento criado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao criar atendimento:', error);
+    }
   };
 
   return (
@@ -36,7 +61,7 @@ const RegistroAtendimento: React.FC = () => {
         label="Data"
         rules={[{ required: true, message: 'Por favor, insira a data' }]}
       >
-        <DatePicker />
+        <DatePicker format="DD/MM/YYYY" />
       </Form.Item>
 
       <Form.Item
@@ -44,7 +69,7 @@ const RegistroAtendimento: React.FC = () => {
         label="Hora"
         rules={[{ required: true, message: 'Por favor, insira a hora' }]}
       >
-        <TimePicker />
+        <TimePicker format="HH:mm" />
       </Form.Item>
 
       <Form.Item
@@ -64,7 +89,7 @@ const RegistroAtendimento: React.FC = () => {
         label="Pagamento"
         rules={[{ required: true, message: 'Por favor, insira o valor do pagamento' }]}
       >
-        <Input />
+        <Input type="number" min="0" step="0.01" />
       </Form.Item>
 
       <Form.Item>

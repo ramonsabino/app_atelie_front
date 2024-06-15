@@ -1,54 +1,134 @@
-import React, { useState } from 'react';
-import { Card, Button, Modal, Form, Input, Select } from 'antd';
+import React, { useState, useEffect } from 'react';
+import axios from '../../axiosConfig';
+import { Card, Button, Modal, Form, Input, Select, Radio } from 'antd';
 
 const { Option } = Select;
 
 interface EntradaValor {
+  mes: string;
+  tipo: string;
+  valor: number;
+  descricao?: string;
+  pagamento: number;
+  categoria: string; // Incluímos o campo categoria aqui
+}
+
+interface NovaEntrada {
   categoria: string;
   descricao: string;
-  valor: number;
+  pagamento: number;
+  tipo: string;
+  data: string;
+  mes: string;
 }
 
 const Rendimentos = () => {
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalAddVisible, setModalAddVisible] = useState(false);
+  const [modalDetalhesVisible, setModalDetalhesVisible] = useState(false);
+  const [modalContent, setModalContent] = useState<EntradaValor[]>([]);
   const [categoria, setCategoria] = useState<string>('');
   const [descricao, setDescricao] = useState<string>('');
-  const [valor, setValor] = useState<number | undefined>(undefined);
-  const [entradasValores, setEntradasValores] = useState<EntradaValor[]>([
-    { categoria: 'Pagamento de clientes', descricao: 'Maquiagem noiva', valor: 200 },
-    { categoria: 'Gasto com Salão', descricao: 'Manutenção do ar condicionado', valor: -100 },
-  ]);
+  const [pagamento, setPagamento] = useState<number | undefined>(undefined);
+  const [tipo, setTipo] = useState<string>('Entrada');
+  const [entradasValores, setEntradasValores] = useState<EntradaValor[]>([]);
+
+  useEffect(() => {
+    const fetchRendimentos = async () => {
+      try {
+        const response = await axios.get('/rendimentos');
+        const rendimentos = response.data;
+
+        const aggregatedData: { [key: string]: EntradaValor } = {};
+
+        rendimentos.forEach((item: { pagamento: number; mes: string; tipo: string; descricao?: string; categoria: string }) => {
+          const key = `${item.mes}-${item.tipo}`;
+          if (!aggregatedData[key]) {
+            aggregatedData[key] = { mes: item.mes, tipo: item.tipo, valor: 0, descricao: item.descricao, pagamento: item.pagamento, categoria: item.categoria };
+          }
+          aggregatedData[key].valor += item.pagamento;
+        });
+
+        setEntradasValores(Object.values(aggregatedData));
+      } catch (error) {
+        console.error('Erro ao buscar rendimentos:', error);
+      }
+    };
+
+    fetchRendimentos();
+  }, []);
 
   const handleAddEntrada = () => {
-    setModalVisible(true);
+    setModalAddVisible(true);
+  };
+
+  const handleVerDetalhes = (mes: string, tipo: string) => {
+    fetchDetalhes(mes, tipo);
+  };
+
+  const fetchDetalhes = async (mes: string, tipo: string) => {
+    try {
+      const response = await axios.get('/rendimentos', {
+        params: { mes, tipo }, // Filtrando apenas os rendimentos do tipo 'Saida'
+      });
+      const detalhes = response.data.filter((item: EntradaValor) => item.tipo === 'Saida');
+      setModalContent(detalhes);
+      setModalDetalhesVisible(true);
+    } catch (error) {
+      console.error('Erro ao buscar detalhes:', error);
+    }
   };
 
   const handleCancel = () => {
-    setModalVisible(false);
+    setModalAddVisible(false);
+    setModalDetalhesVisible(false);
     setCategoria('');
     setDescricao('');
-    setValor(undefined);
+    setPagamento(undefined);
+    setTipo('Entrada');
   };
 
   const handleCategoriaChange = (value: string) => {
     setCategoria(value);
   };
 
-  const handleSubmit = () => {
-    // Verifica se o valor é negativo para determinar a cor
-    const isNegative = valor && valor < 0;
+  const handleTipoChange = (e: any) => {
+    setTipo(e.target.value);
+  };
 
-    // Adiciona a nova entrada de valor ao estado
-    const newEntrada: EntradaValor = {
+  const handleSubmit = async () => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.toLocaleString('default', { month: 'long' });
+
+    const newEntrada: NovaEntrada = {
       categoria,
       descricao,
-      valor: valor || 0, // Valor padrão é 0 se não for definido
+      pagamento: pagamento || 0,
+      tipo,
+      data: currentDate.toISOString(),
+      mes: currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1),
     };
 
-    setEntradasValores([...entradasValores, newEntrada]);
+    try {
+      await axios.post('/rendimentos', newEntrada);
+      const updatedEntradas = [...entradasValores];
+      const existingEntryIndex = updatedEntradas.findIndex(
+        entrada => entrada.mes === newEntrada.mes && entrada.tipo === newEntrada.tipo
+      );
 
-    // Limpa os campos do formulário
-    handleCancel();
+      if (existingEntryIndex > -1) {
+        updatedEntradas[existingEntryIndex].valor += newEntrada.pagamento;
+        if (newEntrada.tipo === 'Saida') {
+          updatedEntradas[existingEntryIndex].descricao = newEntrada.descricao;
+        }
+      } else {
+        updatedEntradas.push({ mes: newEntrada.mes, tipo: newEntrada.tipo, valor: newEntrada.pagamento, descricao: newEntrada.tipo === 'Saida' ? newEntrada.descricao : undefined, pagamento: newEntrada.pagamento, categoria: newEntrada.categoria });
+      }
+
+      setEntradasValores(updatedEntradas);
+      handleCancel();
+    } catch (error) {
+      console.error('Erro ao adicionar rendimento:', error);
+    }
   };
 
   return (
@@ -56,43 +136,74 @@ const Rendimentos = () => {
       <div style={{ marginBottom: 16, textAlign: 'right' }}>
         <Button type="primary" onClick={handleAddEntrada}>Adicionar Entrada de Valor</Button>
       </div>
-      {/* Exemplo de cartões com os valores */}
       {entradasValores.map((entrada, index) => (
         <Card
           key={index}
-          title={entrada.descricao}
-          style={{ marginBottom: 16, backgroundColor: entrada.valor < 0 ? '#FFCCCC' : 'inherit' }}
+          title={`${entrada.mes} - ${entrada.tipo}`}
+          style={{ marginBottom: 16, backgroundColor: entrada.tipo === 'Saida' ? '#ff0303' : '#03ff70' }}
+          extra={entrada.tipo === 'Saida' && (
+            <Button onClick={() => handleVerDetalhes(entrada.mes, entrada.tipo)}>Ver Detalhes</Button>
+          )}
         >
-          <p><strong>Categoria:</strong> {entrada.categoria}</p>
+          <p><strong>Mês:</strong> {entrada.mes}</p>
+          <p><strong>Tipo:</strong> {entrada.tipo}</p>
           <p><strong>Valor:</strong> R$ {entrada.valor}</p>
+          {entrada.tipo === 'Saida' && entrada.descricao && <p><strong>Descrição:</strong> {entrada.descricao}</p>}
         </Card>
       ))}
       <Modal
+        title="Detalhes das Saidas"
+        visible={modalDetalhesVisible}
+        onCancel={handleCancel}
+        footer={[
+          <Button key="ok" type="primary" onClick={handleCancel}>
+            Fechar
+          </Button>
+        ]}
+      >
+        {modalContent.map((entrada, index) => (
+          <Card
+            key={index}
+            title={`${entrada.mes} - ${entrada.tipo}`}
+            style={{ marginBottom: 16, backgroundColor: entrada.tipo === 'Saida' ? '#FFCCCC' : 'inherit' }}
+          >
+            <p><strong>Mês:</strong> {entrada.mes}</p>
+            <p><strong>Tipo:</strong> {entrada.tipo}</p>
+            <p><strong>Categoria:</strong> {entrada.categoria}</p>
+            <p><strong>Valor:</strong> R$ {entrada.pagamento}</p> {/* Mostrar o valor do pagamento */}
+            {entrada.descricao && <p><strong>Descrição:</strong> {entrada.descricao}</p>}
+          </Card>
+        ))}
+      </Modal>
+      <Modal
         title="Adicionar Entrada de Valor"
-        visible={modalVisible}
+        visible={modalAddVisible}
         onCancel={handleCancel}
         onOk={handleSubmit}
       >
-        <Form>
-          <Form.Item label="Categoria">
+        <Form layout="vertical">
+          <Form.Item label="Categoria" required>
             <Select value={categoria} onChange={handleCategoriaChange}>
-              <Option value="reposicao_material">Reposição de Material</Option>
-              <Option value="gasto_salao">Gasto com Salão</Option>
-              <Option value="gasto_geral">Gasto Geral</Option>
-              {/* Adicione outras categorias conforme necessário */}
+              <Option value="Reposição de Material">Reposição de Material</Option>
+              <Option value="Gastos com Salão">Gastos com Salão</Option>
             </Select>
           </Form.Item>
-          <Form.Item label="Descrição">
+          <Form.Item label="Descrição" required>
             <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
           </Form.Item>
-          <Form.Item label="Valor">
-            {/* Alteramos para colorir de vermelho se o valor for negativo */}
+          <Form.Item label="Pagamento" required>
             <Input
               type="number"
-              value={valor}
-              onChange={(e) => setValor(parseFloat(e.target.value))}
-              style={{ borderColor: valor && valor < 0 ? '#FFCCCC' : undefined }}
+              value={pagamento}
+              onChange={(e) => setPagamento(parseFloat(e.target.value))}
+              style={{ borderColor: pagamento !== undefined && pagamento < 0 ? '#ff0000' : undefined }}
             />
+          </Form.Item>
+          <Form.Item label="Tipo" required>
+            <Radio.Group value={tipo} onChange={handleTipoChange}>
+              <Radio value="Entrada">Entrada</Radio>
+              <Radio value="Saida">Saida</Radio>
+            </Radio.Group>
           </Form.Item>
         </Form>
       </Modal>

@@ -1,77 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Collapse } from 'antd';
+import { useAtendimentoContext, extrairMesDaData } from '../../context/AtendimentoContext'; // Importando o hook de contexto e função auxiliar
+import { Atendimento } from '../../context/AtendimentoContext'; // Importando o tipo Atendimento
 
 interface Mes {
-  mes: string;
-  totalAtendimentos: number;
-  totalRendimentos: number;
-  clientesAtendidos: Cliente[];
+    mes: string;
+    totalAtendimentos: number;
+    totalRendimentos: number;
+    clientesAtendidos: Cliente[];
 }
 
 interface Cliente {
-  nome: string;
-  procedimento: string;
-  valor: number;
+    nome: string;
+    procedimento: string;
+    valor: number;
 }
 
 const { Panel } = Collapse;
 
 const Historico: React.FC = () => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [clientesDoMes, setClientesDoMes] = useState<Cliente[]>([]);
-  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
+    const { atendimentos } = useAtendimentoContext(); // Obtendo os atendimentos do contexto
+    const [modalVisible, setModalVisible] = useState(false);
+    const [clientesDoMes, setClientesDoMes] = useState<Cliente[]>([]);
+    const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
 
-  const dataSource: Mes[] = [
-    { mes: 'Janeiro', totalAtendimentos: 10, totalRendimentos: 500, clientesAtendidos: [{ nome: 'Cliente 1', procedimento: 'Procedimento X', valor: 100 }, { nome: 'Cliente 2', procedimento: 'Procedimento Y', valor: 150 }] },
-    { mes: 'Fevereiro', totalAtendimentos: 15, totalRendimentos: 700, clientesAtendidos: [{ nome: 'Cliente 3', procedimento: 'Procedimento Z', valor: 200 }, { nome: 'Cliente 4', procedimento: 'Procedimento W', valor: 250 }] },
-    { mes: 'Março', totalAtendimentos: 20, totalRendimentos: 900, clientesAtendidos: [{ nome: 'Cliente 5', procedimento: 'Procedimento A', valor: 300 }, { nome: 'Cliente 6', procedimento: 'Procedimento B', valor: 350 }] },
-    // Adicione mais meses conforme necessário
-  ];
+    const handleVerHistorico = (clientesAtendidos: Cliente[]) => {
+        setClientesDoMes(clientesAtendidos);
+        setModalVisible(true); // Abrir o modal ao clicar em "Ver Histórico"
+    };
 
-  const handleVerHistorico = (clientes: Cliente[]) => {
-    setClientesDoMes(clientes);
-    setModalVisible(true); // Abrir o modal ao clicar em "Ver Histórico"
-  };
+    const columns = [
+        { title: 'Mês', dataIndex: 'mes', key: 'mes' },
+        { title: 'Total de Atendimentos', dataIndex: 'totalAtendimentos', key: 'totalAtendimentos' },
+        { title: 'Total de Rendimentos', dataIndex: 'totalRendimentos', key: 'totalRendimentos' },
+        {
+            title: 'Ações',
+            dataIndex: 'actions',
+            key: 'actions',
+            render: (_text: any, record: Mes) => (
+                <Button type="primary" onClick={() => handleVerHistorico(record.clientesAtendidos)}>Ver Histórico</Button>
+            ),
+        },
+    ];
 
-  const columns = [
-    { title: 'Mês', dataIndex: 'mes', key: 'mes' },
-    { title: 'Total de Atendimentos', dataIndex: 'totalAtendimentos', key: 'totalAtendimentos' },
-    { title: 'Total de Rendimentos', dataIndex: 'totalRendimentos', key: 'totalRendimentos' },
-    {
-      title: 'Ações',
-      dataIndex: 'actions',
-      key: 'actions',
-      render: (_text: any, record: Mes) => (
-        <Button type="primary" onClick={() => handleVerHistorico(record.clientesAtendidos)}>Ver Histórico</Button>
-      ),
-    },
-  ];
+    // Função para transformar atendimentos em dataSource no formato desejado
+    const transformarAtendimentosParaDataSource = (atendimentos: Atendimento[]): Mes[] => {
+        const mesesMap = new Map<string, Mes>();
+        
+        atendimentos.forEach(atendimento => {
+            const mes = extrairMesDaData(atendimento.dataHoraAgendada);
+            if (!mesesMap.has(mes)) {
+                mesesMap.set(mes, {
+                    mes: mes,
+                    totalAtendimentos: 0,
+                    totalRendimentos: 0,
+                    clientesAtendidos: []
+                });
+            }
+            const mesAtual = mesesMap.get(mes);
+            if (mesAtual) {
+                mesAtual.totalAtendimentos++;
+                mesAtual.totalRendimentos += atendimento.pagamento;
+                mesAtual.clientesAtendidos.push({
+                    nome: atendimento.nomeCliente,
+                    procedimento: atendimento.procedimento,
+                    valor: atendimento.pagamento
+                });
+                mesesMap.set(mes, mesAtual);
+            }
+        });
 
-  return (
-    <div>
-      <Table
-        dataSource={dataSource}
-        columns={columns}
-        pagination={false}
-        scroll={{ x: true }}
-      />
-      <Modal
-        title="Clientes Atendidos no Mês"
-        visible={modalVisible}
-        onCancel={() => setModalVisible(false)} // Fechar o modal ao clicar em "Cancelar"
-        footer={null}
-      >
-        <Collapse accordion>
-          {clientesDoMes.map((cliente, index) => (
-            <Panel header={cliente.nome} key={index}>
-              <p><strong>Procedimento:</strong> {cliente.procedimento}</p>
-              <p><strong>Valor:</strong> R$ {cliente.valor.toFixed(2)}</p>
-            </Panel>
-          ))}
-        </Collapse>
-      </Modal>
-    </div>
-  );
+        return Array.from(mesesMap.values());
+    };
+
+    const dataSource = transformarAtendimentosParaDataSource(atendimentos);
+
+    return (
+        <div>
+            <Table
+                dataSource={dataSource}
+                columns={columns}
+                pagination={false}
+                scroll={{ x: true }}
+            />
+            <Modal
+                title="Clientes Atendidos no Mês"
+                visible={modalVisible}
+                onCancel={() => setModalVisible(false)} // Fechar o modal ao clicar em "Cancelar"
+                footer={null}
+            >
+                <Collapse accordion>
+                    {clientesDoMes.map((cliente, index) => (
+                        <Panel header={cliente.nome} key={index}>
+                            <p><strong>Procedimento:</strong> {cliente.procedimento}</p>
+                            <p><strong>Valor:</strong> R$ {cliente.valor.toFixed(2)}</p>
+                        </Panel>
+                    ))}
+                </Collapse>
+            </Modal>
+        </div>
+    );
 };
 
 export default Historico;

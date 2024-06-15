@@ -1,14 +1,21 @@
 .custom-header {
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgb(213, 146, 137);
-    height: 64px; /* Adjust the height as necessary */
-  }
-  
-  .logo {
-    height: 64px; /* Adjust the size as necessary */
-    margin: 32px; /* Adjust the margin as necessary */
-  }
-  
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Alinha o conteúdo ao centro */
+  background-color: rgb(243, 185, 177); /* Mantém a cor de fundo atual */
+  height: 64px; /* Mantém a altura atual */
+  position: relative; /* Adicionado para posicionar o ícone do menu absolutamente */
+}
+
+.logo {
+  height: 64px; /* Mantém o tamanho atual */
+}
+
+.menu-icon {
+  background-color: rgb(243, 185, 177); /* Cor de fundo do botão igual ao header */
+  border: none; /* Remove a borda do botão */
+  color: white; /* Cor do ícone do menu */
+  position: absolute; /* Posiciona o ícone do menu absolutamente */
+  left: 10px; /* Posiciona o ícone do menu à esquerda */
+}

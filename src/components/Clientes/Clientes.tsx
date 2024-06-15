@@ -1,22 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Modal, Form, Input } from 'antd';
+import { useAtendimentoContext, Atendimento, Cliente as ClienteType } from '../../context/AtendimentoContext'; // Importe o contexto e tipos necessários
 
-interface Cliente {
-  nome: string;
+interface Cliente extends ClienteType {
   vezesAtendido: number;
+  historico?: Atendimento[]; // Adiciona o campo de histórico ao Cliente
 }
 
-const clientes: Cliente[] = [
-  { nome: 'PIXILIM 1', vezesAtendido: 3 },
-  { nome: 'PIXILIM 2', vezesAtendido: 5 },
-  { nome: 'PIXILIM 3', vezesAtendido: 2 },
-];
-
 const Clientes: React.FC = () => {
+  const { atendimentos } = useAtendimentoContext(); // Use o contexto de atendimento
   const [modalAdicionarClienteVisible, setModalAdicionarClienteVisible] = useState(false);
   const [modalHistoricoVisible, setModalHistoricoVisible] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [novoClienteNome, setNovoClienteNome] = useState('');
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+
+  useEffect(() => {
+    // Função para calcular quantas vezes cada cliente foi atendido
+    const calcularVezesAtendido = (nomeCliente: string): number => {
+      return atendimentos.filter(atendimento => atendimento.nomeCliente === nomeCliente).length;
+    };
+
+    // Monta a lista de clientes com base nos atendimentos recebidos
+    const listaClientes = atendimentos.reduce<Cliente[]>((acc, atendimento) => {
+      const existingClientIndex = acc.findIndex(cliente => cliente.nome === atendimento.nomeCliente);
+      if (existingClientIndex !== -1) {
+        // Cliente já existe na lista, atualiza a contagem de vezes atendido
+        acc[existingClientIndex].vezesAtendido++;
+      } else {
+        // Cliente não existe na lista, adiciona à lista
+        acc.push({
+          _id: atendimento._id,
+          nome: atendimento.nomeCliente,
+          dataCadastro: '', // Você pode definir como desejar, depende da estrutura do seu backend
+          vezesAtendido: 1, // Primeiro atendimento
+        });
+      }
+      return acc;
+    }, []);
+
+    setClientes(listaClientes);
+  }, [atendimentos]); // Atualiza sempre que os atendimentos mudarem
 
   const handleAddCliente = () => {
     setModalAdicionarClienteVisible(true);
@@ -38,7 +62,9 @@ const Clientes: React.FC = () => {
   };
 
   const handleHistorico = (cliente: Cliente) => {
-    setClienteSelecionado(cliente);
+    // Encontra o histórico do cliente usando o contexto de atendimento
+    const historicoCliente = atendimentos.filter(atendimento => atendimento.nomeCliente === cliente.nome);
+    setClienteSelecionado({ ...cliente, historico: historicoCliente });
     setModalHistoricoVisible(true);
   };
 
@@ -83,8 +109,20 @@ const Clientes: React.FC = () => {
           <div>
             <p><strong>Nome do Cliente:</strong> {clienteSelecionado.nome}</p>
             <p><strong>Vezes Atendido:</strong> {clienteSelecionado.vezesAtendido}</p>
-            <p><strong>Último Atendimento:</strong> xx/xx/xxxx</p>
-            <p><strong>Procedimento Feito:</strong> Invente algo...</p>
+            {clienteSelecionado.historico && (
+              <div>
+                <p><strong>Histórico de Atendimentos:</strong></p>
+                <ul>
+                  {clienteSelecionado.historico.map(atendimento => (
+                    <li key={atendimento._id}>
+                      <p><strong>Procedimento Feito:</strong> {atendimento.procedimento}</p>
+                      <p><strong>Data do Atendimento:</strong> {atendimento.dataHoraAgendada}</p>
+                      {/* Adicione mais informações conforme necessário */}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </Modal>
