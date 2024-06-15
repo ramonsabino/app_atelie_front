@@ -8,6 +8,7 @@ import {
   Button,
   message,
   Spin,
+  ConfigProvider
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAtendimentoContext } from "../../context/AtendimentoContext";
@@ -15,6 +16,7 @@ import moment from "moment";
 import "moment/locale/pt-br";
 import "moment-timezone";
 import "./styles.css";
+import ptBR from "antd/es/locale/pt_BR";
 
 const { Option } = Select;
 
@@ -94,6 +96,7 @@ const RegistroAtendimento: React.FC = () => {
           <Input />
         </Form.Item>
 
+        <ConfigProvider locale={ptBR}>
         <Form.Item
           name="data"
           label="Data"
@@ -101,7 +104,9 @@ const RegistroAtendimento: React.FC = () => {
         >
           <DatePicker format="DD/MM/YYYY" placeholder="Selecione a Data" />
         </Form.Item>
+        </ConfigProvider>
 
+        <ConfigProvider locale={ptBR}>
         <Form.Item
           name="hora"
           label="Hora"
@@ -109,6 +114,7 @@ const RegistroAtendimento: React.FC = () => {
         >
           <TimePicker format="HH:mm" placeholder="Selecione a Hora" />
         </Form.Item>
+        </ConfigProvider>
 
         <Form.Item
           name="forma_pagamento"

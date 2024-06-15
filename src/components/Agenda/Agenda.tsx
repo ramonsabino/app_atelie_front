@@ -23,11 +23,15 @@ const Agenda = () => {
     };
 
     // Mapeia os atendimentos para os eventos do calendário
-    const eventos = atendimentos.map(atendimento => ({
-        title: `${atendimento.nomeCliente} - Procedimento: ${atendimento.procedimento}`,
-        start: new Date(atendimento.dataHoraAgendada),
-        end: moment(atendimento.dataHoraAgendada).add(2, 'hours').toDate(), // Adicione 2 horas para o fim do evento, ajuste conforme necessário
-    }));
+    const eventos = atendimentos.map(atendimento => {
+        const start = moment(atendimento.dataHoraAgendada).add(3, "hours").toDate(); // Adicione 2 horas
+        const end = moment(start).add(1.30, 'hours').toDate(); // Adicione 2 horas para o fim do evento
+        return {
+            title: `${atendimento.nomeCliente} - Procedimento: ${atendimento.procedimento}`,
+            start: start,
+            end: end,
+        };
+    });
 
     return (
         <div style={{ height: '500px' }}>
