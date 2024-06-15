@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../axiosConfig';
-import moment from 'moment';
+
 
 export interface Atendimento {
     _id: string;
@@ -47,32 +47,40 @@ export const AtendimentoProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const criarNovoAtendimento = async (novoAtendimento: Omit<Atendimento, '_id'>) => {
         try {
-            // Formatar dataHoraRegistro para enviar ao backend
-            const dataHoraRegistro = moment().format('YYYY-MM-DD HH:mm:ss');
-
-            // Formatar dataHoraAgendada para enviar ao backend
-            const dataHoraAgendada = moment.utc(`${moment(novoAtendimento.dataHoraAgendada).format('YYYY-MM-DD')} ${moment(novoAtendimento.dataHoraAgendada).format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
-
-            const atendimentoComDatas = {
-                ...novoAtendimento,
-                dataHoraRegistro,
-                dataHoraAgendada,
+            // Primeiro, criar o novo atendimento
+            const responseAtendimento = await api.post<Atendimento>('/atendimentos', novoAtendimento);
+            const atendimentoCriado = responseAtendimento.data;
+    
+            // Segundo, criar ou atualizar o cliente relacionado ao atendimento
+            const novoCliente = {
+                nome: atendimentoCriado.nomeCliente,
+                dataCadastro: atendimentoCriado.dataHoraRegistro, // Utiliza a dataHora do atendimento
             };
     
-            // Primeiro, criar o novo atendimento
-            const responseAtendimento = await api.post<Atendimento>('/atendimentos', atendimentoComDatas);
-            const atendimentoCriado = responseAtendimento.data;
-
-            // Atualizar estado local com o novo atendimento criado
-            setAtendimentos([...atendimentos, atendimentoCriado]);
+            // Verificar se o cliente já existe (exemplo de verificação pela API)
+            const responseClientes = await api.get<Cliente[]>(`/clientes?nome=${encodeURIComponent(atendimentoCriado.nomeCliente)}`);
+            let clienteExistente = responseClientes.data.find(cliente => cliente.nome === atendimentoCriado.nomeCliente);
     
-            // Restante do código continua igual...
+            if (!clienteExistente) {
+                // Se o cliente não existe, criar um novo
+                const responseNovoCliente = await api.post<Cliente>('/clientes', novoCliente);
+                clienteExistente = responseNovoCliente.data;
+            }
+    
+            // Aqui você pode fazer qualquer ação adicional com o cliente criado ou encontrado
+            console.log('Cliente associado:', clienteExistente);
+    
+            // Atualizar o estado de atendimentos
+            setAtendimentos([...atendimentos, atendimentoCriado]);
         } catch (error) {
             console.error('Erro ao criar novo atendimento:', error);
-            throw error;
+            throw error; // Propaga o erro para quem chamar essa função
         }
     };
     
+    
+
+
     const numeroAtendimentosMes = () => {
         // Lógica para contar o número de atendimentos no mês atual
         const dataAtual = new Date();

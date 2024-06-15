@@ -1,8 +1,9 @@
 import React from 'react';
 import { Form, Input, DatePicker, TimePicker, Select, Button } from 'antd';
 import { useAtendimentoContext } from '../../context/AtendimentoContext';
-import moment, { Moment } from 'moment';
+import moment from 'moment';
 import 'moment/locale/pt-br';
+import 'moment-timezone';
 
 const { Option } = Select;
 
@@ -13,9 +14,17 @@ const RegistroAtendimento: React.FC = () => {
     try {
       const { nome, procedimento, data, hora, forma_pagamento, pagamento } = values;
 
-      // Formatar data e hora para enviar ao backend
-      const dataHoraAgendada: string = moment.utc(`${moment(data).format('YYYY-MM-DD')} ${moment(hora).format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
-      const dataHoraRegistro: string = moment().format('YYYY-MM-DD HH:mm:ss');
+      // Verificar se data e hora estão definidos
+      if (!data || !hora) {
+        console.error('Data ou hora não foram fornecidas corretamente');
+        return;
+      }
+
+      const dataFormatada = data.format('YYYY-MM-DD'); // Formata a data para o formato ISO
+      const horaFormatada = hora.format('HH:mm:ss'); // Formata a hora para o formato ISO
+  
+      const dataHoraAgendada = moment(`${dataFormatada}T${horaFormatada}`).utcOffset('-03:00').toISOString();
+      const dataHoraRegistro = moment().utcOffset('-03:00').toISOString();
 
       // Criar novo atendimento
       await criarNovoAtendimento({
@@ -78,9 +87,9 @@ const RegistroAtendimento: React.FC = () => {
         rules={[{ required: true, message: 'Por favor, selecione a forma de pagamento' }]}
       >
         <Select>
-          <Option value="cartao">Cartão</Option>
-          <Option value="dinheiro">Dinheiro</Option>
-          <Option value="pix">Pix</Option>
+          <Option value="Cartão">Cartão</Option>
+          <Option value="Dinheiro">Dinheiro</Option>
+          <Option value="Pix">Pix</Option>
         </Select>
       </Form.Item>
 
