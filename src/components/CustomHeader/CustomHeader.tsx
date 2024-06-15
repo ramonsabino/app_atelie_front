@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Button, Drawer } from 'antd';
-import { DesktopOutlined, FileOutlined, HomeFilled, HomeOutlined, MenuOutlined, PieChartOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons';
-import logo_bg from '../../assets/logo_bg.png';
-import './CustomHeader.css'; // Import the CSS file for additional styling
-import { Link, useLocation } from 'react-router-dom';
-import { useSpring, animated } from 'react-spring'; // Import the necessary functions from react-spring
+import React, { useEffect, useState } from "react";
+import { Layout, Button, Drawer, Badge, Menu, List, Avatar } from "antd";
+import { BellOutlined, DesktopOutlined, FileOutlined, HomeOutlined, MenuOutlined, PieChartOutlined, SmileOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
+import logo_bg from "../../assets/logo_bg.png";
+import "./CustomHeader.css";
+import { Link, useLocation } from "react-router-dom";
+import { useSpring, animated } from "react-spring";
+import { useAtendimentoContext, Atendimento } from "../../context/AtendimentoContext";
 
 const { Header } = Layout;
 
@@ -14,15 +15,33 @@ interface CustomMenuProps {
   siderRef: React.RefObject<HTMLDivElement>;
 }
 
-const CustomHeader: React.FC<CustomMenuProps> = ({collapsed, toggleCollapsed, siderRef}) => {
-  const [visible, setVisible] = useState(false);
+const CustomHeader: React.FC<CustomMenuProps> = ({
+  collapsed,
+  toggleCollapsed,
+  siderRef,
+}) => {
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [bellVisible, setBellVisible] = useState(false);
+  const [dataAtual, setDataAtual] = useState(new Date());
+  const { pessoasAgendadaDoDia, atendimentosDoDia } = useAtendimentoContext(); // Utilize o hook do contexto
 
-  const showDrawer = () => {
-    setVisible(true);
+  const currentLocation = useLocation(); // Renomeie para currentLocation
+
+  useEffect(() => {
+    setDataAtual(new Date()); // Atualiza a data atual toda vez que a localização muda
+  }, [currentLocation]);
+
+  const showMenuDrawer = () => {
+    setMenuVisible(true);
+  };
+
+  const showBellDrawer = () => {
+    setBellVisible(true);
   };
 
   const onClose = () => {
-    setVisible(false);
+    setMenuVisible(false);
+    setBellVisible(false);
   };
 
   const location = useLocation();
@@ -31,50 +50,94 @@ const CustomHeader: React.FC<CustomMenuProps> = ({collapsed, toggleCollapsed, si
     if (!collapsed) {
       toggleCollapsed();
     }
-    onClose(); // Adicione esta linha para fechar o menu
+    onClose(); // Fechar o menu ao clicar em um item
   };
 
-  // Add this line to create an animation
-  const animation = useSpring({ opacity: visible ? 1 : 0, transform: visible ? 'translateX(0%)' : 'translateX(-100%)' });
+  const animation = useSpring({
+    opacity: menuVisible || bellVisible ? 1 : 0,
+    transform:
+      menuVisible || bellVisible ? "translateX(0%)" : "translateX(-100%)",
+  });
 
   return (
     <Header className="site-layout-background custom-header">
-      <Button type="primary" onClick={showDrawer} style={{ marginRight: '16px' }} className='menu-icon'>
+      <Button
+        type="primary"
+        onClick={showMenuDrawer}
+        style={{ marginRight: "16px" }}
+        className="menu-icon"
+      >
         <MenuOutlined />
       </Button>
       <img src={logo_bg} alt="Atelie Luana Ingrid" className="logo" />
+      <Badge count={pessoasAgendadaDoDia(dataAtual)}>
+        <Button
+          type="text"
+          onClick={showBellDrawer}
+          style={{ fontSize: "20px", color: "#ffffff", marginLeft: "5px" }}
+        >
+          <BellOutlined style={{ marginLeft: "50px" }} />
+        </Button>
+      </Badge>
+      <Drawer
+        title="Atendimentos de Hoje"
+        placement="right"
+        closable={false}
+        onClose={onClose}
+        visible={bellVisible}
+        width={350}
+      >
+        <List
+          itemLayout="horizontal"
+          dataSource={atendimentosDoDia()}
+          renderItem={(atendimento: Atendimento) => (
+            <List.Item>
+              <List.Item.Meta
+                avatar={<Avatar icon={<SmileOutlined />} />}
+                title={<Link to={`/agenda`}>{atendimento.nomeCliente}</Link>}
+                description={atendimento.procedimento}
+              />
+            </List.Item>
+          )}
+        />
+      </Drawer>
       <Drawer
         title="Menu"
         placement="left"
         closable={false}
         onClose={onClose}
-        visible={visible}
-        width={250} // Define a largura do Drawer aqui
+        visible={menuVisible}
+        width={250}
       >
-        {/* Wrap the Drawer content in an animated component */}
         <animated.div style={animation}>
           <Menu
             mode="inline"
-            defaultSelectedKeys={['1']}
-            style={{ padding: -5 }} // Remove o padding padrão do Menu
+            defaultSelectedKeys={["1"]}
+            style={{ padding: 0 }}
           >
-            <Menu.Item key="1" icon={<HomeOutlined />} onClick={handleClick} style={{ padding: 0 }}>
+            <Menu.Item key="1" icon={<HomeOutlined />} onClick={handleClick}>
               <Link to="/">Página Inicial</Link>
             </Menu.Item>
-            <Menu.Item key="2" icon={<PieChartOutlined />} onClick={handleClick} style={{ padding: 0 }}>
+            <Menu.Item
+              key="2"
+              icon={<PieChartOutlined />}
+              onClick={handleClick}
+            >
               <Link to="/registro-atendimento">Registro de Atendimento</Link>
             </Menu.Item>
-            <Menu.Item key="3" icon={<DesktopOutlined />} onClick={handleClick} style={{ padding: 0 }}>
+            <Menu.Item key="3" icon={<DesktopOutlined />} onClick={handleClick}>
               <Link to="/clientes">Clientes</Link>
             </Menu.Item>
-            <Menu.Item key="4" icon={<TeamOutlined />} onClick={handleClick} style={{ padding: 0 }}>
+            <Menu.Item key="4" icon={<TeamOutlined />} onClick={handleClick}>
               <Link to="/agenda">Agenda</Link>
             </Menu.Item>
-            <Menu.Item key="5" icon={<FileOutlined />} onClick={handleClick} style={{ padding: 0 }}>
+            <Menu.Item key="5" icon={<FileOutlined />} onClick={handleClick}>
               <Link to="/rendimentos">Rendimentos</Link>
             </Menu.Item>
-            <Menu.Item key="6" icon={<UserOutlined />} onClick={handleClick} style={{ padding: 0 }}>
-              <Link to="/historico-atendimentos">Histórico de Atendimentos</Link>
+            <Menu.Item key="6" icon={<UserOutlined />} onClick={handleClick}>
+              <Link to="/historico-atendimentos">
+                Histórico de Atendimentos
+              </Link>
             </Menu.Item>
           </Menu>
         </animated.div>

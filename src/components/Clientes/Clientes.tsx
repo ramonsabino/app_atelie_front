@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Modal, Form, Input } from 'antd';
 import { useAtendimentoContext, Atendimento, Cliente as ClienteType } from '../../context/AtendimentoContext'; // Importe o contexto e tipos necessários
+import moment from 'moment';
+import './styles.css'
 
 interface Cliente extends ClienteType {
   vezesAtendido: number;
@@ -75,12 +77,12 @@ const Clientes: React.FC = () => {
   return (
     <div>
       <div style={{ textAlign: 'right', marginBottom: 16 }}>
-        <Button type="primary" onClick={handleAddCliente}>Adicionar Cliente</Button>
+        <Button type="primary" onClick={handleAddCliente} className='btn-clientes'>Adicionar Cliente</Button>
       </div>
       {clientes.map((cliente, index) => (
         <Card key={index} title={cliente.nome} style={{ marginBottom: 16 }}>
           <p>Vezes Atendido: {cliente.vezesAtendido}</p>
-          <Button type="primary" onClick={() => handleHistorico(cliente)}>Histórico</Button>
+          <Button type="primary" onClick={() => handleHistorico(cliente)} className='btn-historico'>Histórico</Button>
         </Card>
       ))}
       <Modal
@@ -116,8 +118,7 @@ const Clientes: React.FC = () => {
                   {clienteSelecionado.historico.map(atendimento => (
                     <li key={atendimento._id}>
                       <p><strong>Procedimento Feito:</strong> {atendimento.procedimento}</p>
-                      <p><strong>Data do Atendimento:</strong> {atendimento.dataHoraAgendada}</p>
-                      {/* Adicione mais informações conforme necessário */}
+                      <p><strong>Data do Atendimento:</strong> {moment(atendimento.dataHoraAgendada).format('DD/MM/YYYY HH:mm')}</p>
                     </li>
                   ))}
                 </ul>

@@ -24,6 +24,8 @@ interface AtendimentoContextData {
     criarNovoAtendimento: (novoAtendimento: Omit<Atendimento, '_id'>) => Promise<void>;
     numeroAtendimentosMes: () => number;
     pessoasAgendadasMes: () => number;
+    pessoasAgendadaDoDia: (data: Date) => number;
+    atendimentosDoDia: () => any;
     rendimentosMes: () => number;
 }
 
@@ -77,9 +79,6 @@ export const AtendimentoProvider: React.FC<{ children: React.ReactNode }> = ({ c
             throw error; // Propaga o erro para quem chamar essa função
         }
     };
-    
-    
-
 
     const numeroAtendimentosMes = () => {
         // Lógica para contar o número de atendimentos no mês atual
@@ -93,14 +92,50 @@ export const AtendimentoProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const pessoasAgendadasMes = () => {
         // Lógica para contar o número de pessoas agendadas no mês atual
         const dataAtual = new Date();
-        return atendimentos.filter(atendimento => {
+        const atendimentosMesAtual = atendimentos.filter(atendimento => {
             const dataAtendimento = new Date(atendimento.dataHoraAgendada);
             return dataAtendimento.getMonth() === dataAtual.getMonth() && dataAtendimento.getFullYear() === dataAtual.getFullYear();
-        }).reduce((total, atendimento) => {
-            // Utilize um Set para contar apenas uma vez cada cliente
-            return total + (new Set(atendimento.nomeCliente)).size;
-        }, 0);
+        });
+    
+        
+        // Utilize um Set para contar apenas uma vez cada cliente
+        const clientesUnicos = new Set<string>();
+        atendimentosMesAtual.forEach(atendimento => {
+            clientesUnicos.add(atendimento.nomeCliente);
+        });
+    
+        return clientesUnicos.size;
     };
+
+    const pessoasAgendadaDoDia = (data: Date) => {
+        // Filtrar atendimentos para a data específica e contar clientes únicos
+        const atendimentosDoDia = atendimentos.filter(atendimento => {
+            const dataAtendimento = new Date(atendimento.dataHoraAgendada);
+            return (
+                dataAtendimento.getDate() === data.getDate() &&
+                dataAtendimento.getMonth() === data.getMonth() &&
+                dataAtendimento.getFullYear() === data.getFullYear()
+            );
+        });
+        const clientesUnicos = new Set<string>();
+        atendimentosDoDia.forEach(atendimento => {
+            clientesUnicos.add(atendimento.nomeCliente);
+        });
+
+        return clientesUnicos.size;
+    };
+
+    const atendimentosDoDia = () => {
+        const dataAtual = new Date();
+        return atendimentos.filter(atendimento => {
+          const dataAtendimento = new Date(atendimento.dataHoraAgendada);
+          return (
+            dataAtendimento.getDate() === dataAtual.getDate() &&
+            dataAtendimento.getMonth() === dataAtual.getMonth() &&
+            dataAtendimento.getFullYear() === dataAtual.getFullYear()
+          );
+        });
+      };
 
     const rendimentosMes = () => {
         // Lógica para calcular os rendimentos do mês atual
@@ -114,7 +149,7 @@ export const AtendimentoProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
 
     return (
-        <AtendimentoContext.Provider value={{ atendimentos, carregarAtendimentos, criarNovoAtendimento, numeroAtendimentosMes, pessoasAgendadasMes, rendimentosMes  }}>
+        <AtendimentoContext.Provider value={{ atendimentos, carregarAtendimentos, criarNovoAtendimento, numeroAtendimentosMes, pessoasAgendadasMes, rendimentosMes, pessoasAgendadaDoDia, atendimentosDoDia  }}>
             {children}
         </AtendimentoContext.Provider>
     );

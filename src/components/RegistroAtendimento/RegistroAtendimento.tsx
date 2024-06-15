@@ -1,15 +1,17 @@
 import React from 'react';
-import { Form, Input, DatePicker, TimePicker, Select, Button } from 'antd';
+import { Form, Input, DatePicker, TimePicker, Select, Button, message } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { useAtendimentoContext } from '../../context/AtendimentoContext';
 import moment from 'moment';
 import 'moment/locale/pt-br';
 import 'moment-timezone';
+import './styles.css'
 
 const { Option } = Select;
 
 const RegistroAtendimento: React.FC = () => {
   const { criarNovoAtendimento } = useAtendimentoContext();
-
+  const history = useNavigate();
   const onFinish = async (values: any) => {
     try {
       const { nome, procedimento, data, hora, forma_pagamento, pagamento } = values;
@@ -20,11 +22,10 @@ const RegistroAtendimento: React.FC = () => {
         return;
       }
 
-      const dataFormatada = data.format('YYYY-MM-DD'); // Formata a data para o formato ISO
-      const horaFormatada = hora.format('HH:mm:ss'); // Formata a hora para o formato ISO
-  
-      const dataHoraAgendada = moment(`${dataFormatada}T${horaFormatada}`).utcOffset('-03:00').toISOString();
-      const dataHoraRegistro = moment().utcOffset('-03:00').toISOString();
+      const dataFormatada = data.format('YYYY-MM-DD');
+      const horaFormatada = hora.format('HH:mm:ss');
+      const dataHoraAgendada = moment.utc(`${dataFormatada}T${horaFormatada}`).subtract(0, 'hours').toISOString();
+      const dataHoraRegistro = moment.tz('America/Sao_Paulo').subtract(3, 'hours').toISOString();
 
       // Criar novo atendimento
       await criarNovoAtendimento({
@@ -36,7 +37,12 @@ const RegistroAtendimento: React.FC = () => {
         pagamento: parseFloat(pagamento) // Converte para número
       });
 
-      console.log('Atendimento criado com sucesso!');
+      // Exibir mensagem de sucesso
+      message.success('Agendado com Sucesso');
+
+      // Redirecionar para '/agenda'
+      history('/agenda');
+
     } catch (error) {
       console.error('Erro ao criar atendimento:', error);
     }
@@ -70,7 +76,7 @@ const RegistroAtendimento: React.FC = () => {
         label="Data"
         rules={[{ required: true, message: 'Por favor, insira a data' }]}
       >
-        <DatePicker format="DD/MM/YYYY" />
+        <DatePicker format="DD/MM/YYYY" placeholder='Selecione a Data'/>
       </Form.Item>
 
       <Form.Item
@@ -78,7 +84,7 @@ const RegistroAtendimento: React.FC = () => {
         label="Hora"
         rules={[{ required: true, message: 'Por favor, insira a hora' }]}
       >
-        <TimePicker format="HH:mm" />
+        <TimePicker format="HH:mm" placeholder='Selecione a Hora'/>
       </Form.Item>
 
       <Form.Item
@@ -102,7 +108,7 @@ const RegistroAtendimento: React.FC = () => {
       </Form.Item>
 
       <Form.Item>
-        <Button type="primary" htmlType="submit">
+        <Button type="primary" htmlType="submit" className="btn-registrar">
           Registrar Atendimento
         </Button>
       </Form.Item>

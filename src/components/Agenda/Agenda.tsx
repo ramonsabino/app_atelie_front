@@ -22,7 +22,7 @@ const Agenda = () => {
         setModalVisible(true);
     };
 
-    // Mapeie os atendimentos para o formato de eventos necessário para o React Big Calendar
+    // Mapeia os atendimentos para os eventos do calendário
     const eventos = atendimentos.map(atendimento => ({
         title: `${atendimento.nomeCliente} - Procedimento: ${atendimento.procedimento}`,
         start: new Date(atendimento.dataHoraAgendada),
@@ -44,7 +44,10 @@ const Agenda = () => {
                     today: "Hoje",
                     month: "Mês",
                     week: "Semana",
-                    day: "Dia"
+                    day: "Dia",
+                    event: "Atendimento",
+                    date: "Data",
+                    time: "Hora"
                 }}
             />
 

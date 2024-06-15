@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Collapse } from 'antd';
 import { useAtendimentoContext, extrairMesDaData } from '../../context/AtendimentoContext'; // Importando o hook de contexto e função auxiliar
 import { Atendimento } from '../../context/AtendimentoContext'; // Importando o tipo Atendimento
+import moment from 'moment'; // Importando moment.js para formatação de data
 
 interface Mes {
     mes: string;
@@ -14,6 +15,7 @@ interface Cliente {
     nome: string;
     procedimento: string;
     valor: number;
+    dataHoraAgendada: string;
 }
 
 const { Panel } = Collapse;
@@ -32,7 +34,12 @@ const Historico: React.FC = () => {
     const columns = [
         { title: 'Mês', dataIndex: 'mes', key: 'mes' },
         { title: 'Total de Atendimentos', dataIndex: 'totalAtendimentos', key: 'totalAtendimentos' },
-        { title: 'Total de Rendimentos', dataIndex: 'totalRendimentos', key: 'totalRendimentos' },
+        { 
+            title: 'Total de Rendimentos', 
+            dataIndex: 'totalRendimentos', 
+            key: 'totalRendimentos', 
+            render: (rendimentos: number) => `R$ ${rendimentos.toFixed(2)}` // Adicionando o símbolo 'R$' antes do valor
+        },
         {
             title: 'Ações',
             dataIndex: 'actions',
@@ -64,7 +71,8 @@ const Historico: React.FC = () => {
                 mesAtual.clientesAtendidos.push({
                     nome: atendimento.nomeCliente,
                     procedimento: atendimento.procedimento,
-                    valor: atendimento.pagamento
+                    valor: atendimento.pagamento,
+                    dataHoraAgendada: atendimento.dataHoraAgendada
                 });
                 mesesMap.set(mes, mesAtual);
             }
@@ -94,6 +102,7 @@ const Historico: React.FC = () => {
                         <Panel header={cliente.nome} key={index}>
                             <p><strong>Procedimento:</strong> {cliente.procedimento}</p>
                             <p><strong>Valor:</strong> R$ {cliente.valor.toFixed(2)}</p>
+                            <p><strong>Data:</strong> {moment(cliente.dataHoraAgendada).format('DD/MM/YYYY HH:mm')}</p>
                         </Panel>
                     ))}
                 </Collapse>

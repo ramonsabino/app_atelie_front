@@ -11,7 +11,7 @@ const CustomFooter: React.FC = () => (
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'rgb(213, 146, 137)',
+      backgroundColor: 'rgba(239,175,166,255)',
     }}
   >
     <p>&copy; Atelie Luana Ingrid</p>

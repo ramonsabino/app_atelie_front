@@ -25,10 +25,10 @@ const App: React.FC = () => {
   return (
     <Router>
       <AtendimentoProvider> {/* Adicione o AtendimentoProvider aqui */}
-        <Layout style={{ minHeight: '100vh', backgroundColor: '#fcf4fc' }}>
-          <Layout className="site-layout" style={{ backgroundColor: '#fcf4fc' }}>
+        <Layout style={{ minHeight: '100vh', backgroundColor: '#fef4f2' }}>
+          <Layout className="site-layout" style={{ backgroundColor: '#fef4f2' }}>
             <CustomHeader collapsed={collapsed} toggleCollapsed={toggleCollapsed} siderRef={siderRef} />
-            <Content style={{ margin: '16px 16px 0', backgroundColor: '#fcf4fc' }}>
+            <Content style={{ margin: '16px 16px 0', backgroundColor: '#fef4f2' }}>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/registro-atendimento" element={<RegistroAtendimento />} />

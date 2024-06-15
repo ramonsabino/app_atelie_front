@@ -6,7 +6,7 @@ const Dashboard: React.FC = () => {
     const { numeroAtendimentosMes, pessoasAgendadasMes, rendimentosMes } = useAtendimentoContext(); // Obtenha os dados do contexto
 
     return (
-        <div className="site-layout-background" style={{ padding: 24, minHeight: 360, background: '#fcf4fc' }}>
+        <div className="site-layout-background" style={{ padding: 24, minHeight: 360, background: '#fef4f2' }}>
             <Card title="Número de Atendimentos do Mês" style={{ marginBottom: 16 }}>
                 {numeroAtendimentosMes()}
             </Card>
