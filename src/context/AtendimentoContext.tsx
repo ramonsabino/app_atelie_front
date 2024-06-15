@@ -69,9 +69,6 @@ export const AtendimentoProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 clienteExistente = responseNovoCliente.data;
             }
     
-            // Aqui você pode fazer qualquer ação adicional com o cliente criado ou encontrado
-            console.log('Cliente associado:', clienteExistente);
-    
             // Atualizar o estado de atendimentos
             setAtendimentos([...atendimentos, atendimentoCriado]);
         } catch (error) {
